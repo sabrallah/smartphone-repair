@@ -13,7 +13,13 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["https://smartphone-repair.onrender.com"],
+        "methods": ["POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Email configuration
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
@@ -46,6 +52,9 @@ def contact():
         data = request.json
         logger.debug(f"Form data received: {data}")
         
+        # Log headers for debugging CORS issues
+        logger.debug(f"Request headers: {dict(request.headers)}")
+        
         # Validate required fields
         required_fields = ['name', 'email', 'phone', 'service', 'message']
         for field in required_fields:
@@ -60,6 +69,12 @@ def contact():
         device = data.get('device')
         service = data.get('service')
         message = data.get('message')
+        
+        # Log email configuration
+        logger.debug(f"Mail server: {app.config['MAIL_SERVER']}")
+        logger.debug(f"Mail port: {app.config['MAIL_PORT']}")
+        logger.debug(f"Mail username: {app.config['MAIL_USERNAME']}")
+        logger.debug(f"Recipient email: {os.getenv('RECIPIENT_EMAIL')}")
         
         # Create email content
         email_body = f"""
