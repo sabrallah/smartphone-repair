@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
@@ -29,6 +29,15 @@ logger.info(f"Mail Use TLS: {app.config['MAIL_USE_TLS']}")
 logger.info(f"Mail Username: {app.config['MAIL_USERNAME']}")
 
 mail = Mail(app)
+
+# Serve static files
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
 
 @app.route('/api/contact', methods=['POST'])
 def contact():
@@ -85,4 +94,5 @@ def contact():
 
 if __name__ == '__main__':
     logger.info("Starting Flask application...")
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
