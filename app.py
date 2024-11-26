@@ -49,10 +49,13 @@ def serve_static(path):
 def contact():
     try:
         logger.info("Received contact form submission")
+        
+        if not request.is_json:
+            logger.error("Request is not JSON")
+            return jsonify({'error': 'Content-Type must be application/json'}), 400
+            
         data = request.json
         logger.debug(f"Form data received: {data}")
-        
-        # Log headers for debugging CORS issues
         logger.debug(f"Request headers: {dict(request.headers)}")
         
         # Validate required fields
@@ -76,36 +79,41 @@ def contact():
         logger.debug(f"Mail username: {app.config['MAIL_USERNAME']}")
         logger.debug(f"Recipient email: {os.getenv('RECIPIENT_EMAIL')}")
         
-        # Create email content
-        email_body = f"""
-        New Contact Form Submission:
-        
-        Name: {name}
-        Email: {email}
-        Phone: {phone}
-        Device: {device}
-        Service: {service}
-        Message: {message}
-        """
-        
-        logger.info("Preparing to send email")
-        
-        # Send email
-        msg = Message(
-            subject='New Contact Form Submission',
-            sender=app.config['MAIL_USERNAME'],
-            recipients=[os.getenv('RECIPIENT_EMAIL')],
-            body=email_body
-        )
-        
-        mail.send(msg)
-        logger.info("Email sent successfully")
-        
-        return jsonify({'message': 'Form submitted successfully!'}), 200
+        try:
+            # Create email content
+            email_body = f"""
+            New Contact Form Submission:
+            
+            Name: {name}
+            Email: {email}
+            Phone: {phone}
+            Device: {device}
+            Service: {service}
+            Message: {message}
+            """
+            
+            logger.info("Preparing to send email")
+            
+            # Send email
+            msg = Message(
+                subject='New Contact Form Submission',
+                sender=app.config['MAIL_USERNAME'],
+                recipients=[os.getenv('RECIPIENT_EMAIL')],
+                body=email_body
+            )
+            
+            mail.send(msg)
+            logger.info("Email sent successfully")
+            
+            return jsonify({'message': 'Form submitted successfully!'}), 200
+            
+        except Exception as email_error:
+            logger.error(f"Error sending email: {str(email_error)}", exc_info=True)
+            return jsonify({'error': f'Email sending failed: {str(email_error)}'}), 500
     
     except Exception as e:
         logger.error(f"Error processing form submission: {str(e)}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
     logger.info("Starting Flask application...")

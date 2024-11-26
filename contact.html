@@ -221,11 +221,11 @@
                     alert('Thank you! Your message has been sent successfully.');
                     this.reset();
                 } else {
-                    throw new Error(result.error || 'Something went wrong');
+                    throw new Error(result.error || 'Error: ' + response.status + ' ' + response.statusText);
                 }
             } catch (error) {
-                alert('Sorry, there was an error sending your message. Please try again later.');
-                console.error('Error:', error);
+                alert('Error details: ' + error.message);
+                console.error('Detailed error:', error);
             } finally {
                 // Restore button state
                 submitButton.disabled = false;
