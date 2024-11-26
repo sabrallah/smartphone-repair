@@ -12,6 +12,20 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
+# Verify required environment variables
+required_env_vars = [
+    'MAIL_SERVER',
+    'MAIL_PORT',
+    'MAIL_USERNAME',
+    'MAIL_PASSWORD',
+    'RECIPIENT_EMAIL'
+]
+
+missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+if missing_vars:
+    logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
+    raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")
+
 app = Flask(__name__)
 CORS(app, resources={
     r"/api/*": {
@@ -22,19 +36,29 @@ CORS(app, resources={
 })
 
 # Email configuration
-app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
-app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
-app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config.update(
+    MAIL_SERVER=os.getenv('MAIL_SERVER'),
+    MAIL_PORT=int(os.getenv('MAIL_PORT', 587)),
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME=os.getenv('MAIL_USERNAME'),
+    MAIL_PASSWORD=os.getenv('MAIL_PASSWORD')
+)
+
+# Initialize Flask-Mail
+try:
+    mail = Mail(app)
+    logger.info("Flask-Mail initialized successfully")
+except Exception as e:
+    logger.error(f"Error initializing Flask-Mail: {str(e)}")
+    raise
 
 # Print configuration (without sensitive data)
+logger.info("Mail Configuration:")
 logger.info(f"Mail Server: {app.config['MAIL_SERVER']}")
 logger.info(f"Mail Port: {app.config['MAIL_PORT']}")
 logger.info(f"Mail Use TLS: {app.config['MAIL_USE_TLS']}")
 logger.info(f"Mail Username: {app.config['MAIL_USERNAME']}")
-
-mail = Mail(app)
+logger.info(f"Recipient Email: {os.getenv('RECIPIENT_EMAIL')}")
 
 # Serve static files
 @app.route('/')
